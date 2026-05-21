@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil Base Visible · AFD</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh;padding:2rem 1rem}
+.container{max-width:720px;margin:0 auto}
+
+/* LOGIN */
+.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border:1px solid #e0ddd6;border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:420px;text-align:center}
+.login-card h2{font-size:20px;font-weight:700;color:#111;margin-bottom:6px}
+.login-card p{font-size:14px;color:#888;margin-bottom:1.75rem;line-height:1.6}
+.login-card input{width:100%;padding:12px 16px;font-size:15px;border:1px solid #ddd;border-radius:10px;margin-bottom:12px;font-family:inherit;transition:border-color .15s;text-align:center}
+.login-card input:focus{outline:none;border-color:#38ada9;box-shadow:0 0 0 3px rgba(56,173,169,.1)}
+.btn-login{width:100%;padding:12px;background:#38ada9;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-login:hover{background:#2a8a86}
+.btn-login:disabled{background:#a8d8d7;cursor:not-allowed}
+.login-error{margin-top:12px;font-size:13px;color:#c0392b;background:#fdf0ef;border-radius:8px;padding:10px;display:none}
+
+/* HEADER */
+.header{margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid #e0ddd6;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.header-text h1{font-size:22px;font-weight:700;color:#111;margin-bottom:4px}
+.header-text p{font-size:14px;color:#888;line-height:1.5}
+.header-user{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.user-badge{font-size:13px;color:#2a8a86;background:#e8f7f7;padding:6px 12px;border-radius:20px;font-weight:500}
+.btn-salir{font-size:13px;color:#999;background:none;border:1px solid #ddd;border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-salir:hover{color:#333;border-color:#bbb}
+
+/* STEP BAR */
+.step-bar{display:flex;margin-bottom:1.75rem;border-radius:10px;overflow:hidden;border:1px solid #e0ddd6}
+.step-item{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:500;color:#999;background:#fff;cursor:pointer;transition:all .2s;border-right:1px solid #e0ddd6}
+.step-item:last-child{border-right:none}
+.step-item.active{background:#38ada9;color:#fff}
+.step-item.done{background:#e8f7f7;color:#2a8a86}
+.step-num{display:block;font-size:10px;opacity:.7;margin-bottom:2px}
+
+/* PROGRESS */
+.progress-wrap{margin-bottom:1.5rem}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.progress-bar{height:6px;background:#e0ddd6;border-radius:10px;overflow:hidden}
+.progress-fill{height:100%;background:#38ada9;border-radius:10px;transition:width .4s ease}
+
+/* AUTOSAVE */
+.autosave-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#aaa;margin-bottom:1.25rem;min-height:20px}
+.autosave-bar.guardando{color:#38ada9}
+.autosave-bar.guardado{color:#888}
+.autosave-bar.error{color:#c0392b}
+
+/* VIEWS */
+.view{display:none}
+.view.active{display:block}
+
+/* SECTION LABEL */
+.section-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#999;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.section-label::after{content:'';flex:1;height:1px;background:#e0ddd6}
+
+/* INTRO BOX */
+.intro-box{background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:16px;margin-bottom:1.5rem;font-size:14px;color:#555;line-height:1.6}
+.intro-box strong{color:#111}
+
+/* FIELDS */
+.field-group{margin-bottom:1.25rem}
+.field-label{display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:5px}
+.field-hint{font-size:12px;color:#999;margin-bottom:6px;line-height:1.5}
+input[type="text"],textarea{width:100%;font-size:14px;color:#1a1a1a;background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px 14px;font-family:inherit;resize:vertical;transition:border-color .15s;line-height:1.5}
+input[type="text"]:focus,textarea:focus{outline:none;border-color:#38ada9;box-shadow:0 0 0 3px rgba(56,173,169,.1)}
+textarea{min-height:80px}
+
+/* OPCIONES RADIO */
+.opciones{display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem}
+.opcion{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;transition:all .15s}
+.opcion:hover{border-color:#38ada9;background:#f9fefe}
+.opcion.selected{border-color:#38ada9;background:#e8f7f7}
+.opcion input[type="radio"]{margin-top:2px;accent-color:#38ada9;flex-shrink:0}
+.opcion-texto{font-size:14px;color:#333;line-height:1.4}
+.opcion-texto strong{display:block;font-weight:600;color:#111;margin-bottom:2px}
+.opcion-texto span{font-size:13px;color:#888}
+
+/* ESTILOS VISUALES */
+.estilos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
+@media(max-width:480px){.estilos-grid{grid-template-columns:1fr}}
+.estilo-card{padding:14px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;transition:all .15s;text-align:center}
+.estilo-card:hover{border-color:#38ada9}
+.estilo-card.selected{border-color:#38ada9;background:#e8f7f7}
+.estilo-emoji{font-size:24px;margin-bottom:6px}
+.estilo-nombre{font-size:13px;font-weight:600;color:#111;margin-bottom:4px}
+.estilo-desc{font-size:12px;color:#888;line-height:1.4}
+
+/* BIO ESTRUCTURAS */
+.estructura-box{background:#f5f4f0;border-radius:10px;padding:14px;margin-bottom:8px}
+.estructura-box .etiqueta{font-size:11px;font-weight:700;color:#38ada9;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.estructura-box .formula{font-size:13px;color:#555;line-height:1.5;margin-bottom:6px;font-style:italic}
+.estructura-box .ejemplo{font-size:12px;color:#999;line-height:1.5}
+
+/* DESTACADOS */
+.destacado-item{background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:14px;margin-bottom:10px}
+.destacado-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.destacado-num{width:28px;height:28px;border-radius:50%;background:#38ada9;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.destacado-nombre{font-size:14px;font-weight:600;color:#111}
+
+/* BLOQUE CONCLUSIONES */
+.conclusion-block{background:#fff;border:1px solid #e0ddd6;border-radius:10px;padding:16px;margin-bottom:12px}
+.conclusion-prompt{font-size:15px;font-weight:600;color:#111;margin-bottom:4px}
+.conclusion-prompt .dot{color:#38ada9;margin-right:6px}
+.conclusion-hint{font-size:12px;color:#999;margin-bottom:8px;line-height:1.5}
+
+/* PROMPT BOX */
+.prompt-box{background:#111;border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+.prompt-box .prompt-label{font-size:11px;font-weight:700;color:#38ada9;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.prompt-box p{font-size:14px;color:#fff;line-height:1.7;font-style:italic}
+.prompt-box .copy-prompt{margin-top:12px;background:#38ada9;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.prompt-box .copy-prompt:hover{background:#2a8a86}
+
+/* NAV */
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e0ddd6;flex-wrap:wrap;gap:10px}
+.step-info{font-size:13px;color:#999}
+.btn{padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid #ddd;background:#fff;color:#333;font-family:inherit}
+.btn:hover{background:#f0f0f0}
+.btn.primary{background:#38ada9;border-color:#38ada9;color:#fff}
+.btn.primary:hover{background:#2a8a86}
+.btn.dark{background:#111;border-color:#111;color:#fff;padding:12px 28px;font-size:15px}
+.btn.dark:hover{background:#333}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#111;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;transition:transform .3s ease;z-index:1000;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media print{
+  body{background:#fff;padding:0}
+  .step-bar,.nav-row,.autosave-bar,.header-user,.btn,.toast,#login-screen{display:none!important}
+  .view{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <div style="margin-bottom:1.5rem;display:flex;align-items:center;justify-content:center;">
+      <img src="logo-afd-blanco.png" alt="Academia de Fisioterapia Digital" style="height:60px;width:auto;display:block;">
+    </div>
+    <h2>Perfil Base Visible</h2>
+    <p>Introduce tu correo electrónico con el que entras a la formación para acceder al ejercicio y guardar tu progreso.</p>
+    <input type="email" id="login-email" placeholder="tucorreo@email.com" onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" style="display:none">
+<div class="container">
+
+  <div class="header">
+    <div class="header-text">
+      <h1>Perfil Base Visible</h1>
+      <p>Clase 2 · De cero a un perfil con dirección, bio optimizada e identidad visual mínima.</p>
+    </div>
+    <div class="header-user">
+      <span class="user-badge" id="user-name">—</span>
+      <button class="btn-salir" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Progreso del ejercicio</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="step-bar">
+    <div class="step-item active" id="step0" onclick="goTo('view-donde')"><span class="step-num">Bloque 1</span>Dónde estás</div>
+    <div class="step-item" id="step1" onclick="goTo('view-construir')"><span class="step-num">Bloque 2</span>Qué construyes</div>
+    <div class="step-item" id="step2" onclick="goTo('view-bio')"><span class="step-num">Bloque 3</span>Tu bio</div>
+    <div class="step-item" id="step3" onclick="goTo('view-perfil')"><span class="step-num">Bloque 4</span>Tu perfil</div>
+    <div class="step-item" id="step4" onclick="goTo('view-visual')"><span class="step-num">Bloque 5</span>Visual</div>
+    <div class="step-item" id="step5" onclick="goTo('view-destacados')"><span class="step-num">Bloque 6</span>Destacados</div>
+  </div>
+
+  <div class="autosave-bar" id="autosave-bar">
+    <span id="autosave-text">Los cambios se guardan automáticamente</span>
+  </div>
+
+  <!-- BLOQUE 1: DÓNDE ESTÁS -->
+  <div class="view active" id="view-donde">
+    <p class="section-label">Bloque 1 · Dónde estás ahora</p>
+
+    <div class="intro-box">
+      Antes de tocar nada, haz una captura de tu perfil actual y guárdala. La necesitarás al final para ver el cambio. Si todavía no tienes cuenta, sigue igualmente — este ejercicio te ayuda a definir desde qué punto partes.
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">¿Cuál es tu situación actual?</label>
+      <div class="opciones" id="opciones-situacion">
+        <label class="opcion" onclick="seleccionarOpcion('situacion_cuenta', 'sin_cuenta', this)">
+          <input type="radio" name="situacion" value="sin_cuenta"> <div class="opcion-texto"><strong>No tengo cuenta profesional todavía</strong><span>Necesito crearla desde cero</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('situacion_cuenta', 'parada', this)">
+          <input type="radio" name="situacion" value="parada"> <div class="opcion-texto"><strong>Tengo una cuenta parada</strong><span>Existe pero sin actividad real</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('situacion_cuenta', 'caotica', this)">
+          <input type="radio" name="situacion" value="caotica"> <div class="opcion-texto"><strong>Tengo una cuenta caótica</strong><span>Mezcla de temas, contenido antiguo, sin dirección</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('situacion_cuenta', 'tecnica', this)">
+          <input type="radio" name="situacion" value="tecnica"> <div class="opcion-texto"><strong>Tengo una cuenta técnica</strong><span>Publico, pero le habla más a otros fisios que a pacientes</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('situacion_cuenta', 'activa_mal', this)">
+          <input type="radio" name="situacion" value="activa_mal"> <div class="opcion-texto"><strong>Tengo una cuenta activa pero no atrae al paciente que quiero</strong><span>Hay movimiento, pero no del tipo de persona que busco</span></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">¿Qué vas a hacer con tu cuenta?</label>
+      <div class="opciones" id="opciones-decision">
+        <label class="opcion" onclick="seleccionarOpcion('decision_cuenta', 'mantener', this)">
+          <input type="radio" name="decision" value="mantener"> <div class="opcion-texto"><strong>Mantener</strong><span>La cuenta actual sigue teniendo sentido tal como está</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('decision_cuenta', 'reconducir', this)">
+          <input type="radio" name="decision" value="reconducir"> <div class="opcion-texto"><strong>Reconducir</strong><span>Misma cuenta, nuevo enfoque — bio, destacados y contenido nuevo</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('decision_cuenta', 'limpiar', this)">
+          <input type="radio" name="decision" value="limpiar"> <div class="opcion-texto"><strong>Limpiar</strong><span>Archivar lo que ya no me representa y empezar a construir desde ahí</span></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('decision_cuenta', 'nueva', this)">
+          <input type="radio" name="decision" value="nueva"> <div class="opcion-texto"><strong>Empezar desde cero</strong><span>La cuenta actual no me ayuda a construir lo que quiero</span></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Explica tu decisión en 2-3 líneas</label>
+      <p class="field-hint">¿Por qué esta opción? ¿Qué ganas? ¿Qué freno puedes tener?</p>
+      <textarea id="decision_explicacion" placeholder="Escribe aquí tu razonamiento..." oninput="scheduleAutosave()"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <span class="step-info">Bloque 1 de 6</span>
+      <button class="btn primary" onclick="goTo('view-construir')">Qué quieres construir →</button>
+    </div>
+  </div>
+
+  <!-- BLOQUE 2: QUÉ CONSTRUYES -->
+  <div class="view" id="view-construir">
+    <p class="section-label">Bloque 2 · Qué quieres construir</p>
+    <div class="intro-box">Esta es la pregunta más importante del ejercicio. No lo pienses demasiado — escribe lo que salga ahora mismo. <strong>Esto no es definitivo, es tu punto de partida.</strong></div>
+
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Soy…</p>
+      <textarea id="quien_soy" placeholder="Fisioterapeuta especializada en..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Ayudo a…</p>
+      <textarea id="ayudo_a" placeholder="Mujeres en posparto, deportistas, personas con dolor crónico..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Con este problema o deseo…</p>
+      <textarea id="problema_deseo" placeholder="Recuperar confianza en su cuerpo, eliminar el dolor, volver a moverse sin miedo..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Desde este enfoque…</p>
+      <textarea id="enfoque" placeholder="Ejercicio terapéutico, educación, acompañamiento progresivo..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>En esta cuenta voy a hablar de…</p>
+      <textarea id="temas_cuenta" placeholder="Posparto, suelo pélvico, dolor, movimiento, confianza corporal..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Quiero que una persona sienta al entrar…</p>
+      <textarea id="quiero_que_sienta" placeholder="Alivio, confianza, que no está sola, que tiene solución..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Quiero que una persona entienda al entrar…</p>
+      <textarea id="quiero_que_entienda" placeholder="Que no tiene que vivir resignada, que hay otra forma, que yo puedo ayudarle..." oninput="scheduleAutosave()"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn" onclick="goTo('view-donde')">← Volver</button>
+      <span class="step-info">Bloque 2 de 6</span>
+      <button class="btn primary" onclick="goTo('view-bio')">Tu bio →</button>
+    </div>
+  </div>
+
+  <!-- BLOQUE 3: BIO -->
+  <div class="view" id="view-bio">
+    <p class="section-label">Bloque 3 · Tu bio</p>
+    <div class="intro-box">Usa las respuestas del bloque anterior para escribir 3 versiones de tu bio. No busques la perfecta — escribe las 3 y luego elige o combina.</div>
+
+    <div class="estructura-box">
+      <div class="etiqueta">Estructura 1</div>
+      <div class="formula">Ayudo a [persona] a [resultado] sin [frustración o creencia limitante].</div>
+      <div class="ejemplo">Ej: Ayudo a mujeres en posparto a recuperar confianza en su cuerpo sin normalizar escapes, dolor o miedo al movimiento.</div>
+    </div>
+    <div class="estructura-box">
+      <div class="etiqueta">Estructura 2</div>
+      <div class="formula">Fisio especializada en [área]. Aquí aprenderás [temas] para [resultado].</div>
+      <div class="ejemplo">Ej: Fisio especializada en dolor persistente. Aquí aprenderás a entender tu dolor, moverte con confianza y dejar de vivir tu cuerpo como una amenaza.</div>
+    </div>
+    <div class="estructura-box" style="margin-bottom:1.5rem">
+      <div class="etiqueta">Estructura 3</div>
+      <div class="formula">Para [persona] que [situación]. Fisioterapia, educación y movimiento para [resultado].</div>
+      <div class="ejemplo">Ej: Para corredoras que encadenan lesión tras lesión. Fisioterapia, educación y progresión para volver a correr con confianza.</div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Versión 1</label>
+      <textarea id="bio_version_1" placeholder="Escribe tu primera versión..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Versión 2</label>
+      <textarea id="bio_version_2" placeholder="Escribe tu segunda versión..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Versión 3</label>
+      <textarea id="bio_version_3" placeholder="Escribe tu tercera versión..." oninput="scheduleAutosave()"></textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Bio elegida</label>
+      <p class="field-hint">Elige la mejor o combina elementos de varias.</p>
+      <textarea id="bio_elegida" placeholder="Esta es la bio que voy a usar..." oninput="scheduleAutosave()" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn" onclick="goTo('view-construir')">← Volver</button>
+      <span class="step-info">Bloque 3 de 6</span>
+      <button class="btn primary" onclick="goTo('view-perfil')">Tu perfil →</button>
+    </div>
+  </div>
+
+  <!-- BLOQUE 4: PERFIL -->
+  <div class="view" id="view-perfil">
+    <p class="section-label">Bloque 4 · Tu perfil</p>
+    <div class="intro-box">Tres decisiones rápidas. Sin darles más vueltas de las necesarias.</div>
+
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Foto de perfil</p>
+      <p class="conclusion-hint">¿Se ve bien tu cara? ¿Transmite confianza? ¿Es coherente con tu tono?</p>
+      <div class="opciones" id="opciones-foto" style="margin-bottom:10px">
+        <label class="opcion" onclick="seleccionarOpcion('foto_decision', 'mantener', this)">
+          <input type="radio" name="foto" value="mantener"> <div class="opcion-texto"><strong>Mantengo la foto actual</strong></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('foto_decision', 'cambiar', this)">
+          <input type="radio" name="foto" value="cambiar"> <div class="opcion-texto"><strong>Cambio la foto</strong></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('foto_decision', 'hacer', this)">
+          <input type="radio" name="foto" value="hacer"> <div class="opcion-texto"><strong>Necesito hacer una foto nueva</strong></div>
+        </label>
+      </div>
+      <textarea id="foto_necesita" placeholder="Si cambias o necesitas foto nueva, ¿qué tipo de foto quieres? ¿Qué necesitas para hacerla?" oninput="scheduleAutosave()" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Nombre</p>
+      <p class="conclusion-hint">¿Añadirías alguna palabra clave que ayude a entender a quién ayudas?</p>
+      <div class="field-group" style="margin-bottom:10px">
+        <label class="field-label">Nombre actual</label>
+        <input type="text" id="nombre_actual" placeholder="Cómo apareces ahora en tu perfil..." oninput="scheduleAutosave()">
+      </div>
+      <div class="field-group" style="margin-bottom:0">
+        <label class="field-label">Nombre propuesto</label>
+        <input type="text" id="nombre_propuesto" placeholder="Cómo te gustaría aparecer o qué palabra clave añadirías..." oninput="scheduleAutosave()">
+      </div>
+    </div>
+
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>Usuario</p>
+      <p class="conclusion-hint">¿Es fácil de recordar y coherente con lo que quieres construir?</p>
+      <div class="field-group" style="margin-bottom:10px">
+        <label class="field-label">Usuario actual</label>
+        <input type="text" id="usuario_actual" placeholder="@tuusuario" oninput="scheduleAutosave()">
+      </div>
+      <div class="opciones" id="opciones-usuario">
+        <label class="opcion" onclick="seleccionarOpcion('usuario_decision', 'mantener', this)">
+          <input type="radio" name="usuario" value="mantener"> <div class="opcion-texto"><strong>Lo mantengo</strong></div>
+        </label>
+        <label class="opcion" onclick="seleccionarOpcion('usuario_decision', 'cambiar', this)">
+          <input type="radio" name="usuario" value="cambiar"> <div class="opcion-texto"><strong>Lo cambio</strong></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn" onclick="goTo('view-bio')">← Volver</button>
+      <span class="step-info">Bloque 4 de 6</span>
+      <button class="btn primary" onclick="goTo('view-visual')">Identidad visual →</button>
+    </div>
+  </div>
+
+  <!-- BLOQUE 5: IDENTIDAD VISUAL -->
+  <div class="view" id="view-visual">
+    <p class="section-label">Bloque 5 · Tu identidad visual mínima</p>
+    <div class="intro-box">No necesitas una marca perfecta. Necesitas una base coherente que te ahorre decisiones cada vez que publicas. Vamos a construirla desde lo que ya observaste en el Tablero de Juego.</div>
+
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>¿Qué cuenta del Tablero de Juego te gustó visualmente?</p>
+      <p class="conclusion-hint">Escribe el nombre o URL y qué tenía que te atraía — colores, orden, sensación general...</p>
+      <input type="text" id="visual_cuenta_gusta" placeholder="@cuenta o URL..." oninput="scheduleAutosave()" style="margin-bottom:8px">
+      <textarea id="visual_cuenta_gusta_porque" placeholder="¿Qué tenía visualmente que te gustó?" oninput="scheduleAutosave()" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="conclusion-block">
+      <p class="conclusion-prompt"><span class="dot">✦</span>¿Qué cuenta te generó rechazo visual?</p>
+      <p class="conclusion-hint">Esto define igual o más que lo que te gusta. ¿Qué no quieres que tenga la tuya?</p>
+      <input type="text" id="visual_cuenta_rechazo" placeholder="@cuenta o URL..." oninput="scheduleAutosave()" style="margin-bottom:8px">
+      <textarea id="visual_cuenta_rechazo_porque" placeholder="¿Qué no quieres que tenga visualmente tu cuenta?" oninput="scheduleAutosave()" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">¿Con qué estilo visual conectas más?</label>
+      <p class="field-hint">Elige el que más te resuene. No tiene que ser perfecto, es tu punto de partida.</p>
+      <div class="estilos-grid">
+        <div class="estilo-card" onclick="seleccionarEstilo('clinico', this)">
+          <div class="estilo-emoji">🏥</div>
+          <div class="estilo-nombre">Clínico y limpio</div>
+          <div class="estilo-desc">Blanco, azules, tipografía clara. Profesional y ordenado.</div>
+        </div>
+        <div class="estilo-card" onclick="seleccionarEstilo('calido', this)">
+          <div class="estilo-emoji">🌿</div>
+          <div class="estilo-nombre">Cálido y natural</div>
+          <div class="estilo-desc">Tierras, verdes, beiges. Cercano y humano.</div>
+        </div>
+        <div class="estilo-card" onclick="seleccionarEstilo('directo', this)">
+          <div class="estilo-emoji">⚡</div>
+          <div class="estilo-nombre">Directo y enérgico</div>
+          <div class="estilo-desc">Colores saturados, tipografía fuerte. Impacto inmediato.</div>
+        </div>
+        <div class="estilo-card" onclick="seleccionarEstilo('minimalista', this)">
+          <div class="estilo-emoji">◻️</div>
+          <div class="estilo-nombre">Minimalista y elegante</div>
+          <div class="estilo-desc">Menos es más. Negro, blanco, un acento de color.</div>
+        </div>
+        <div class="estilo-card" onclick="seleccionarEstilo('cercano', this)">
+          <div class="estilo-emoji">💬</div>
+          <div class="estilo-nombre">Cercano y colorido</div>
+          <div class="estilo-desc">Colores alegres, tipografía amigable. Accesible y vital.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prompt-box">
+      <div class="prompt-label">💡 Prompt para generar tu identidad visual</div>
+      <p id="prompt-visual-texto">"Soy fisioterapeuta y estoy definiendo mi identidad visual para redes sociales. Te adjunto mi análisis de mercado (Tablero de Juego) y mis referencias visuales. Basándote en todo esto necesito: 1) Una paleta de 1 a 3 colores con sus códigos hex y por qué encajan con mi estilo, 2) Dos tipografías gratuitas de Google Fonts — una para títulos y otra para cuerpo — que pueda usar directamente en Canva, 3) Qué términos buscar en Canva para encontrar plantillas de portada de vídeo y carrusel alineadas con mi estilo. Dame opciones concretas y explícame por qué encajan con lo que he descrito."</p>
+      <button class="copy-prompt" onclick="copiarPrompt()">Copiar prompt</button>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn" onclick="goTo('view-perfil')">← Volver</button>
+      <span class="step-info">Bloque 5 de 6</span>
+      <button class="btn primary" onclick="goTo('view-destacados')">Tus destacados →</button>
+    </div>
+  </div>
+
+  <!-- BLOQUE 6: DESTACADOS -->
+  <div class="view" id="view-destacados">
+    <p class="section-label">Bloque 6 · Tus destacados</p>
+    <div class="intro-box">Elige entre 3 y 5 destacados. No necesitas tenerlos todos perfectos desde el primer día — elige los más importantes y empieza.</div>
+
+    <div class="field-group">
+      <label class="field-label">¿Cuáles van a ser tus destacados?</label>
+      <p class="field-hint">Marca los que vayas a usar y explica qué contenido incluirás en cada uno.</p>
+    </div>
+
+    <div id="destacados-container"></div>
+
+    <div class="nav-row">
+      <button class="btn" onclick="goTo('view-visual')">← Volver</button>
+      <span class="step-info">Bloque 6 de 6</span>
+      <button class="btn dark" onclick="descargarMD()">⬇️ Descargar mi Perfil Base</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://xmtmezkoebowgsbxeenv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rrBIvhm28Cgpb13g9daXZQ_yoc8HOHc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let alumnoId = null;
+let alumnoNombre = '';
+let ejercicioId = null;
+let saveTimer = null;
+
+const viewOrder = ['view-donde','view-construir','view-bio','view-perfil','view-visual','view-destacados'];
+
+const opcionesDestacados = ['Empieza aquí','Sobre mí','Cómo trabajo','Servicios','Casos','Testimonios','Recursos','Método','Preguntas frecuentes','Dolor','Consejos','Pacientes'];
+
+const estado = {
+  situacion_cuenta: '',
+  decision_cuenta: '',
+  foto_decision: '',
+  usuario_decision: '',
+  visual_estilo: '',
+  destacados: {}
+};
+
+// LOGIN
+async function doLogin() {
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
+  if (!email) return;
+  var btn = document.getElementById('btn-login');
+  var err = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = 'Comprobando...'; err.style.display = 'none';
+  var res = await db.from('alumnos').select('id,nombre,email,activo').eq('email',email).single();
+  if (res.error || !res.data) {
+    err.textContent = 'Este correo no está autorizado. Contacta con Cristina.';
+    err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; return;
+  }
+  if (!res.data.activo) {
+    err.textContent = 'Tu acceso está desactivado. Contacta con Cristina.';
+    err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Entrar'; return;
+  }
+  alumnoId = res.data.id;
+  alumnoNombre = res.data.nombre;
+  document.getElementById('user-name').textContent = res.data.nombre.split(' ')[0];
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  buildDestacados();
+  await cargarProgreso();
+}
+
+function doLogout() {
+  alumnoId = null; alumnoNombre = ''; ejercicioId = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-email').value = '';
+}
+
+// CARGAR PROGRESO
+async function cargarProgreso() {
+  var res = await db.from('ejercicio_perfil_visible').select('*').eq('alumno_id', alumnoId).single();
+  if (!res.data) return;
+  ejercicioId = res.data.id;
+  var d = res.data;
+
+  // Restaurar radios
+  if (d.situacion_cuenta) { estado.situacion_cuenta = d.situacion_cuenta; restaurarRadio('opciones-situacion', d.situacion_cuenta); }
+  if (d.decision_cuenta)  { estado.decision_cuenta = d.decision_cuenta;   restaurarRadio('opciones-decision', d.decision_cuenta); }
+  if (d.foto_decision)    { estado.foto_decision = d.foto_decision;         restaurarRadio('opciones-foto', d.foto_decision); }
+  if (d.usuario_decision) { estado.usuario_decision = d.usuario_decision;   restaurarRadio('opciones-usuario', d.usuario_decision); }
+  if (d.visual_estilo)    { estado.visual_estilo = d.visual_estilo;         restaurarEstilo(d.visual_estilo); }
+
+  // Restaurar textos
+  var campos = ['decision_explicacion','quien_soy','ayudo_a','problema_deseo','enfoque','temas_cuenta','quiero_que_sienta','quiero_que_entienda','bio_version_1','bio_version_2','bio_version_3','bio_elegida','foto_necesita','nombre_actual','nombre_propuesto','usuario_actual','visual_cuenta_gusta','visual_cuenta_gusta_porque','visual_cuenta_rechazo','visual_cuenta_rechazo_porque'];
+  campos.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && d[id]) el.value = d[id];
+  });
+
+  // Restaurar destacados
+  if (d.destacados) {
+    estado.destacados = d.destacados;
+    Object.keys(d.destacados).forEach(function(nombre) {
+      var cb = document.querySelector('input[data-destacado="'+nombre+'"]');
+      if (cb) { cb.checked = true; toggleDestacado(nombre, true); }
+      var ta = document.getElementById('destacado-contenido-'+nombre.replace(/\s/g,'_'));
+      if (ta && d.destacados[nombre]) ta.value = d.destacados[nombre];
+    });
+  }
+
+  actualizarProgreso();
+  mostrarAutosave('guardado','Progreso recuperado ✓');
+}
+
+// GUARDAR
+function scheduleAutosave() { clearTimeout(saveTimer); mostrarAutosave('guardando','Guardando...'); saveTimer = setTimeout(saveProgress, 1500); }
+
+async function saveProgress() {
+  if (!alumnoId) return;
+  var payload = {
+    alumno_id: alumnoId,
+    situacion_cuenta: estado.situacion_cuenta,
+    decision_cuenta: estado.decision_cuenta,
+    decision_explicacion: v('decision_explicacion'),
+    quien_soy: v('quien_soy'),
+    ayudo_a: v('ayudo_a'),
+    problema_deseo: v('problema_deseo'),
+    enfoque: v('enfoque'),
+    temas_cuenta: v('temas_cuenta'),
+    quiero_que_sienta: v('quiero_que_sienta'),
+    quiero_que_entienda: v('quiero_que_entienda'),
+    bio_version_1: v('bio_version_1'),
+    bio_version_2: v('bio_version_2'),
+    bio_version_3: v('bio_version_3'),
+    bio_elegida: v('bio_elegida'),
+    foto_decision: estado.foto_decision,
+    foto_necesita: v('foto_necesita'),
+    nombre_actual: v('nombre_actual'),
+    nombre_propuesto: v('nombre_propuesto'),
+    usuario_actual: v('usuario_actual'),
+    usuario_decision: estado.usuario_decision,
+    visual_cuenta_gusta: v('visual_cuenta_gusta'),
+    visual_cuenta_gusta_porque: v('visual_cuenta_gusta_porque'),
+    visual_cuenta_rechazo: v('visual_cuenta_rechazo'),
+    visual_cuenta_rechazo_porque: v('visual_cuenta_rechazo_porque'),
+    visual_estilo: estado.visual_estilo,
+    destacados: estado.destacados,
+    porcentaje_completado: calcPct(),
+    completado: calcPct() === 100,
+  };
+  var res;
+  if (ejercicioId) {
+    res = await db.from('ejercicio_perfil_visible').update(payload).eq('id', ejercicioId);
+  } else {
+    res = await db.from('ejercicio_perfil_visible').insert(payload).select('id').single();
+    if (res.data) ejercicioId = res.data.id;
+  }
+  if (res.error) mostrarAutosave('error','Error al guardar. Revisa tu conexión.');
+  else { mostrarAutosave('guardado','Guardado automáticamente ✓'); actualizarProgreso(); }
+}
+
+function v(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+
+function calcPct() {
+  var ok = 0, total = 14;
+  if (estado.situacion_cuenta) ok++;
+  if (estado.decision_cuenta) ok++;
+  if (v('decision_explicacion')) ok++;
+  if (v('quien_soy')) ok++;
+  if (v('ayudo_a')) ok++;
+  if (v('problema_deseo')) ok++;
+  if (v('bio_elegida')) ok++;
+  if (estado.foto_decision) ok++;
+  if (v('nombre_actual')) ok++;
+  if (v('usuario_actual')) ok++;
+  if (v('visual_cuenta_gusta')) ok++;
+  if (v('visual_cuenta_rechazo')) ok++;
+  if (estado.visual_estilo) ok++;
+  if (Object.keys(estado.destacados).length > 0) ok++;
+  return Math.round((ok/total)*100);
+}
+
+function actualizarProgreso() {
+  var pct = calcPct();
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-pct').textContent = pct+'%';
+}
+
+function mostrarAutosave(est, texto) {
+  document.getElementById('autosave-bar').className = 'autosave-bar ' + est;
+  document.getElementById('autosave-text').textContent = texto;
+}
+
+// OPCIONES RADIO
+function seleccionarOpcion(campo, valor, el) {
+  estado[campo] = valor;
+  var contenedor = el.closest('.opciones');
+  contenedor.querySelectorAll('.opcion').forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+  scheduleAutosave();
+  actualizarProgreso();
+}
+
+function restaurarRadio(contenedorId, valor) {
+  var cont = document.getElementById(contenedorId);
+  if (!cont) return;
+  cont.querySelectorAll('.opcion').forEach(function(o) {
+    var input = o.querySelector('input');
+    if (input && input.value === valor) { o.classList.add('selected'); input.checked = true; }
+  });
+}
+
+// ESTILOS VISUALES
+function seleccionarEstilo(valor, el) {
+  estado.visual_estilo = valor;
+  document.querySelectorAll('.estilo-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  scheduleAutosave();
+  actualizarProgreso();
+}
+
+function restaurarEstilo(valor) {
+  document.querySelectorAll('.estilo-card').forEach(function(c){
+    if (c.getAttribute('onclick').includes("'"+valor+"'")) c.classList.add('selected');
+  });
+}
+
+// DESTACADOS
+function buildDestacados() {
+  var cont = document.getElementById('destacados-container');
+  cont.innerHTML = '';
+  opcionesDestacados.forEach(function(nombre) {
+    var id = nombre.replace(/\s/g,'_');
+    var div = document.createElement('div');
+    div.className = 'destacado-item';
+    div.id = 'destacado-wrap-'+id;
+    div.innerHTML = '<div class="destacado-header"><input type="checkbox" data-destacado="'+nombre+'" onchange="toggleDestacado(\''+nombre+'\', this.checked)" style="accent-color:#38ada9;width:18px;height:18px;cursor:pointer;flex-shrink:0"><div class="destacado-nombre">'+nombre+'</div></div><div id="destacado-contenido-wrap-'+id+'" style="display:none"><textarea id="destacado-contenido-'+id+'" placeholder="¿Qué contenido incluirás en este destacado?" oninput="guardarDestacado(\''+nombre+'\', this.value); scheduleAutosave()" style="min-height:60px"></textarea></div>';
+    cont.appendChild(div);
+  });
+}
+
+function toggleDestacado(nombre, checked) {
+  var id = nombre.replace(/\s/g,'_');
+  var wrap = document.getElementById('destacado-contenido-wrap-'+id);
+  if (checked) {
+    wrap.style.display = 'block';
+    if (!estado.destacados[nombre]) estado.destacados[nombre] = '';
+  } else {
+    wrap.style.display = 'none';
+    delete estado.destacados[nombre];
+  }
+  scheduleAutosave();
+  actualizarProgreso();
+}
+
+function guardarDestacado(nombre, valor) {
+  estado.destacados[nombre] = valor;
+}
+
+// NAVEGACIÓN
+function goTo(viewId) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById(viewId).classList.add('active');
+  var idx = viewOrder.indexOf(viewId);
+  document.querySelectorAll('.step-item').forEach(function(s,i){
+    s.classList.remove('active','done');
+    if(i===idx) s.classList.add('active');
+    else if(i<idx) s.classList.add('done');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  saveProgress();
+}
+
+// COPIAR PROMPT
+function copiarPrompt() {
+  var texto = document.getElementById('prompt-visual-texto').textContent;
+  navigator.clipboard.writeText(texto).then(function(){
+    showToast('Prompt copiado. Pégalo en Claude o ChatGPT junto con tu Tablero de Juego.');
+  });
+}
+
+// DESCARGAR MD
+function descargarMD() {
+  saveProgress();
+  var nombre = alumnoNombre || 'Alumna';
+  var fecha = new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
+
+  var estiloTexto = { clinico:'Clínico y limpio', calido:'Cálido y natural', directo:'Directo y enérgico', minimalista:'Minimalista y elegante', cercano:'Cercano y colorido' };
+  var situacionTexto = { sin_cuenta:'Sin cuenta profesional todavía', parada:'Cuenta parada', caotica:'Cuenta caótica', tecnica:'Cuenta técnica', activa_mal:'Cuenta activa pero sin atraer al paciente ideal' };
+  var decisionTexto = { mantener:'Mantener', reconducir:'Reconducir', limpiar:'Limpiar', nueva:'Empezar desde cero' };
+
+  var md = '# Mi Perfil Base Visible\n';
+  md += '### Academia de Fisioterapia Digital · Clase 2\n\n';
+  md += '**Alumna:** ' + nombre + '\n';
+  md += '**Fecha:** ' + fecha + '\n\n';
+  md += '---\n\n';
+
+  md += '## Contexto\n\n';
+  md += 'Soy fisioterapeuta y acabo de completar el ejercicio de construcción de mi perfil base en redes sociales. ';
+  md += 'Este documento recoge mis decisiones, mi bio, mi identidad visual mínima y mis destacados. ';
+  md += 'Úsalo como contexto para ayudarme a seguir construyendo mi presencia digital.\n\n';
+  md += '---\n\n';
+
+  md += '## Bloque 1 · Dónde estoy\n\n';
+  if (estado.situacion_cuenta) md += '**Situación actual:** ' + (situacionTexto[estado.situacion_cuenta] || estado.situacion_cuenta) + '\n\n';
+  if (estado.decision_cuenta)  md += '**Decisión:** ' + (decisionTexto[estado.decision_cuenta] || estado.decision_cuenta) + '\n\n';
+  if (v('decision_explicacion')) md += '**Por qué:**\n' + v('decision_explicacion') + '\n\n';
+  md += '---\n\n';
+
+  md += '## Bloque 2 · Qué quiero construir\n\n';
+  if (v('quien_soy'))         md += '**Soy:** ' + v('quien_soy') + '\n\n';
+  if (v('ayudo_a'))           md += '**Ayudo a:** ' + v('ayudo_a') + '\n\n';
+  if (v('problema_deseo'))    md += '**Con este problema o deseo:** ' + v('problema_deseo') + '\n\n';
+  if (v('enfoque'))           md += '**Desde este enfoque:** ' + v('enfoque') + '\n\n';
+  if (v('temas_cuenta'))      md += '**En esta cuenta voy a hablar de:** ' + v('temas_cuenta') + '\n\n';
+  if (v('quiero_que_sienta')) md += '**Quiero que una persona sienta al entrar:** ' + v('quiero_que_sienta') + '\n\n';
+  if (v('quiero_que_entienda')) md += '**Quiero que una persona entienda al entrar:** ' + v('quiero_que_entienda') + '\n\n';
+  md += '---\n\n';
+
+  md += '## Bloque 3 · Mi bio\n\n';
+  if (v('bio_version_1')) md += '**Versión 1:** ' + v('bio_version_1') + '\n\n';
+  if (v('bio_version_2')) md += '**Versión 2:** ' + v('bio_version_2') + '\n\n';
+  if (v('bio_version_3')) md += '**Versión 3:** ' + v('bio_version_3') + '\n\n';
+  if (v('bio_elegida'))   md += '**Bio elegida:**\n' + v('bio_elegida') + '\n\n';
+  md += '---\n\n';
+
+  md += '## Bloque 4 · Mi perfil\n\n';
+  var fotoTexto = { mantener:'Mantengo la foto actual', cambiar:'Cambio la foto', hacer:'Necesito hacer una foto nueva' };
+  if (estado.foto_decision) md += '**Foto:** ' + (fotoTexto[estado.foto_decision] || estado.foto_decision) + '\n\n';
+  if (v('foto_necesita'))   md += '**Qué necesito para la foto:** ' + v('foto_necesita') + '\n\n';
+  if (v('nombre_actual'))   md += '**Nombre actual:** ' + v('nombre_actual') + '\n\n';
+  if (v('nombre_propuesto')) md += '**Nombre propuesto:** ' + v('nombre_propuesto') + '\n\n';
+  if (v('usuario_actual'))  md += '**Usuario:** ' + v('usuario_actual') + '\n\n';
+  md += '---\n\n';
+
+  md += '## Bloque 5 · Identidad visual mínima\n\n';
+  if (v('visual_cuenta_gusta'))        md += '**Cuenta que me gustó visualmente:** ' + v('visual_cuenta_gusta') + '\n\n';
+  if (v('visual_cuenta_gusta_porque')) md += '**Por qué me gustó:** ' + v('visual_cuenta_gusta_porque') + '\n\n';
+  if (v('visual_cuenta_rechazo'))      md += '**Cuenta que me generó rechazo visual:** ' + v('visual_cuenta_rechazo') + '\n\n';
+  if (v('visual_cuenta_rechazo_porque')) md += '**Por qué la rechazo:** ' + v('visual_cuenta_rechazo_porque') + '\n\n';
+  if (estado.visual_estilo) md += '**Estilo visual elegido:** ' + (estiloTexto[estado.visual_estilo] || estado.visual_estilo) + '\n\n';
+  md += '---\n\n';
+
+  md += '## Bloque 6 · Mis destacados\n\n';
+  Object.keys(estado.destacados).forEach(function(nombre) {
+    md += '**' + nombre + ':**\n';
+    if (estado.destacados[nombre]) md += estado.destacados[nombre] + '\n\n';
+    else md += '*(pendiente de definir)*\n\n';
+  });
+  md += '---\n\n';
+
+  md += '## Prompt para generar mi identidad visual\n\n';
+  md += 'Pega este documento completo junto con tu Tablero de Juego en Claude o ChatGPT con este mensaje:\n\n';
+  md += '> *"Soy fisioterapeuta y estoy definiendo mi identidad visual para redes sociales. ';
+  md += 'Te adjunto mi análisis de mercado y mis referencias visuales. ';
+  md += 'Basándote en todo esto necesito: ';
+  md += '1) Una paleta de 1 a 3 colores con sus códigos hex y por qué encajan con mi estilo, ';
+  md += '2) Dos tipografías gratuitas de Google Fonts — una para títulos y otra para cuerpo — que pueda usar directamente en Canva, ';
+  md += '3) Qué términos buscar en Canva para encontrar plantillas de portada de vídeo y carrusel alineadas con mi estilo. ';
+  md += 'Dame opciones concretas y explícame por qué encajan con lo que he descrito."*\n\n';
+  md += '---\n\n';
+  md += '*Generado desde Perfil Base Visible · Academia de Fisioterapia Digital*\n';
+
+  var blob = new Blob([md], {type:'text/markdown;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'perfil-base-'+nombre.split(' ')[0].toLowerCase()+'-'+new Date().toISOString().slice(0,10)+'.md';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Descargado. Tu Perfil Base está listo.');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3500);
+}
+</script>
+</body>
+</html>
